@@ -13,7 +13,6 @@ import bcrypt
 import jwt
 
 from models import *
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 import random
 import string
 
@@ -31,7 +30,6 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
 JWT_ALGORITHM = 'HS256'
-EMERGENT_LLM_KEY = os.getenv('EMERGENT_LLM_KEY')
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -877,29 +875,16 @@ async def get_my_tickets(current_user: dict = Depends(get_current_user)):
     return [SupportTicket(**{k: v for k, v in ticket.items() if k != '_id'}) for ticket in tickets]
 
 # ============= AI =============
-@api_router.post("/ai/generate-description")
-async def generate_description(request: AIDescriptionRequest):
-    try:
-        chat = LlmChat(api_key=EMERGENT_LLM_KEY, session_id=f"desc_{uuid.uuid4()}", system_message="Du bist ein Assistent, der ansprechende Produktbeschreibungen für eine Kleinanzeigen-App schreibt. Schreibe kurz und ansprechend auf Deutsch.").with_model("openai", "gpt-4o-mini")
-        prompt = f"Schreibe eine ansprechende Beschreibung für ein Produkt mit dem Titel: {request.title}\nKategorie: {request.category}\nDetails: {request.category_fields}\n\nSchreibe eine kurze Beschreibung (3-4 Sätze) auf Deutsch."
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
-        return {"description": response}
-    except Exception as e:
-        logger.error(f"Error generating description: {e}")
-        raise HTTPException(status_code=500, detail="Fehler beim Generieren der Beschreibung")
+# AI endpoints temporarily disabled for deployment
+# @api_router.post("/ai/generate-description")
+# async def generate_description(request: AIDescriptionRequest):
+#     # Temporarily disabled - requires emergentintegrations
+#     raise HTTPException(status_code=503, detail="AI-Funktionen vorübergehend nicht verfügbar")
 
-@api_router.post("/ai/suggest-price")
-async def suggest_price(request: AIPriceRequest):
-    try:
-        chat = LlmChat(api_key=EMERGENT_LLM_KEY, session_id=f"price_{uuid.uuid4()}", system_message="Du bist ein Experte für die Bewertung von gebrauchten und neuen Produkten. Gib eine Preisschätzung basierend auf Produktinformationen und Marktbedingungen.").with_model("openai", "gpt-4o-mini")
-        prompt = f"Was ist ein angemessener Preis für ein Produkt mit folgenden Eigenschaften:\nTitel: {request.title}\nKategorie: {request.category}\nZustand: {request.condition or 'Nicht angegeben'}\nDetails: {request.category_fields}\n\nGib eine ungefähre Preisspanne in Euro. Gib eine kurze Antwort (eine Zeile) wie: 'Angemessener Preis: €500-700'"
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
-        return {"suggested_price": response}
-    except Exception as e:
-        logger.error(f"Error suggesting price: {e}")
-        raise HTTPException(status_code=500, detail="Fehler beim Vorschlagen des Preises")
+# @api_router.post("/ai/suggest-price")
+# async def suggest_price(request: AIPriceRequest):
+#     # Temporarily disabled - requires emergentintegrations  
+#     raise HTTPException(status_code=503, detail="AI-Funktionen vorübergehend nicht verfügbar")
 
 # ============= ADMIN =============
 # Get all users (Admin & Super Admin)
